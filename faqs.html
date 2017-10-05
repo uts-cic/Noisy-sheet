@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <style>
+        p {line-height:130%; text-align: justify;}
+        .buton{
+           color: white;
+           padding: 4px 3px 4px 30px;
+           background-color: #398a00;
+           border: 1px solid #29691d;
+           width: 45px;
+           border-radius: 2px;
+           text-shadow:0 1px rgba(0, 0, 0, .1);
+           font-family: arial, sans-serif;
+           font-size: 11px;
+           font-weight: bold;
+        }
+        body {
+          font-family:  Arial, "Helvetica Neue", Helvetica, sans-serif!important;
+          font-size: 13px !important;
+          padding: 0px 10px 0px 0px !important;
+         
+        }
+    </style>
+    <script>
+    function submitData2()
+    {
+       var bandera= document.getElementById("notification");
+       if(bandera.checked)
+       {
+          setCookie("notificationNoise", "true", 365);   
+       } 
+       google.script.host.close();
+   }
+   function setCookie(cname, cvalue, exdays) 
+   {
+     var d = new Date();
+     d.setTime(d.getTime() + (exdays*24*60*60*1000));
+     var expires = "expires="+ d.toUTCString();
+     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+   }
+   </script>
+  </head>
+  <body>
+    <form id="form1">
+       <p style="text-align : justify;">Noisy sheets is an add-on that works in google spreadsheets, which allows users to: add noise to a dataset; share the unique datasets with a student cohort; and calculate function results for the students' versions of the data.</p> 
+       <p>Noisy sheets add-on has two options in the menu: 1) "Add noise", which, as its name states, adds noise to a dataset. A number of options are provided to fit your new dataset; and 2) "Answers", which creates a new spreadsheet file named "MasterAnswers". This file contains the correct answers for calculations on the datasets provided to students. The answers in this master sheet can then be compared to student quiz responses.</p> 
+       <p>Before using the "Noisy sheets" add-on, please bear in mind the following suggestions:</p>
+       <h3>Add Noise</h3>
+       <ul>
+         <li>The original spreadsheet should be in a different folder rather than the main “My drive” folder.</li>
+         <li>The original spreadsheet should have 3 sheets in total:
+             <ul>
+                <li>The dataset</li>
+                <li>A sheet with the students’ information in the following format: name, last name, and email.</li>
+                <img src="https://drive.google.com/uc?export=download&id=0BzrKtHw2T0wjZGo2RkZKemxrX0k" alt="Email Format" style="margin-left: -70px; padding-top: 9px; padding-bottom: 9px;">                 
+                <li>A sheet with the questions to be asked to students in following format: questions and answers.</li>  
+                <img src="https://drive.google.com/uc?export=download&id=0BzrKtHw2T0wjZkpkYXR6OEFIN2M" alt="Questions Format" width="70%" height="70%" style="padding-top: 9px; padding-bottom: 9px;">   
+             </ul>
+         </li> 
+       </ul>
+       
+       
+       <h3>Answers</h3>
+       <ul>
+         <li>Before generating the answers, you should share the spreadsheets with students using the “Share” button in the “Add Noise” option.</li>
+       </ul>
+       <div class="label"><p><input id="notification" type="checkbox" name="notification"/>Do not show the message again</p></div>
+       <div class="buton" onclick="submitData2();">Ok</div>
+    </form>
+  </body>
+</html>
+<!--Explicar con imagenes (Type of data:) VLOOKUP (Excel) https://stackoverflow.com/questions/43843917/how-to-use-img-src-in-google-apps-script -->
