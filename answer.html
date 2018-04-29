@@ -26,6 +26,8 @@
         }
     </style>
     <script>
+    
+    var strUser;
     window.onload = function () 
     {
       google.script.run.withSuccessHandler(addList).comboBox();
@@ -46,14 +48,18 @@
     function obtainAnswer() 
     {
        var e = document.getElementById("questions");
-       var strUser = e.options[e.selectedIndex].value;
-       google.script.run.withSuccessHandler(getMaster).putAnswers(strUser);
+       strUser = e.options[e.selectedIndex].value;
+       //google.script.run.withSuccessHandler(getMaster).putAnswers(strUser);
+       
+       var myRunner = google.script.run.withFailureHandler(onFailure);
+       var myRunner1 = myRunner.withSuccessHandler(getMaster);
+       myRunner1.putAnswers(strUser);
        document.getElementById("info").innerHTML="";
        var div= document.getElementById("info");
        var para = document.createElement("p");
        para.style.color = "red";
        var node = document.createTextNode("The spreadsheet with the answers is being created, please do not close the page.");
-       para.style.fontSize="16px";
+       para.style.textAlign="justify"
        para.appendChild(node);
        div.appendChild(para);
    };
@@ -127,12 +133,39 @@
          para1.appendChild(node1);
          div.appendChild(para1);
       }
-      else{var myVar =setTimeout(getMaster2, 3000);}
+      else{var myVar =setTimeout(getMaster2, 4000);}
        
    }
    function getMaster2()
    {
-       google.script.run.withSuccessHandler(view).getAnswers();
+       var div= document.getElementById("info");
+       var para = document.createElement("p");
+       var node = document.createTextNode("The answers are being added to the spreadsheet, this process can take minutes.");
+       para.style.textAlign="justify"
+       para.appendChild(node);
+       div.appendChild(para);
+       //google.script.run.withSuccessHandler(view).getAnswers(strUser);
+       
+       var myRunner = google.script.run.withFailureHandler(onFailure);
+       var myRunner1 = myRunner.withSuccessHandler(view);
+       myRunner1.getAnswers(strUser);
+   }
+   function onFailure()
+   {
+      document.getElementById("info").innerHTML="";
+      var div= document.getElementById("info"); 
+      var para = document.createElement("p");
+      var node = document.createTextNode("Error Notification");
+      para.style.fontSize="20px";
+      para.appendChild(node);
+      div.appendChild(para);
+      
+      var para4 = document.createElement("p");
+      var node4 = document.createTextNode("An unexpected error has occurred please check that you selected the right values and try again. If the error persists please call the administrator.");
+      para4.style.color="#000000";
+      para4.style.textAlign="justify"
+      para4.appendChild(node4);
+      div.appendChild(para4); 
    }
    
    </script>
