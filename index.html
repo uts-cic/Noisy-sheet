@@ -28,6 +28,14 @@
         }
     </style>
     <script>
+    var emailSend=0;
+    var emailNoSend=0;
+    var flagNoti=true;
+    var formGlobal;
+    var valueCampo=0;
+    var numEma=0;
+    var flagError=true;
+    
     window.onload = function () 
     {//cookie
       var username = getCookie("notificationNoise");
@@ -39,9 +47,7 @@
      //cookie
       google.script.run.withSuccessHandler(addList).comboBox();
     };
-
     
-
    function getCookie(cname) {
     var name = cname + "=";
     var decodedCookie = decodeURIComponent(document.cookie);
@@ -58,7 +64,6 @@
     return "";
   }
    
-   
    function addList(infoList) 
    {
       var select = document.getElementById("email");
@@ -72,6 +77,7 @@
       }
     }
    var banderaEnvio=false;
+   //This function clear the data in the form
    function clearData()
    {
       document.getElementById("labData").style.color = "black";
@@ -84,6 +90,7 @@
       if(mesColum.hasChildNodes()){mesColum.removeChild(mesColum.childNodes[0]);}
       if(mesRow.hasChildNodes()){mesRow.removeChild(mesRow.childNodes[0]);}
    }
+   //This function validate the form
    function validateForm()
    {
       clearData();
@@ -105,11 +112,7 @@
          newP.appendChild(content);
          bandera=true;
       }
-      if(txtColunm=="")
-      {
-         //document.getElementById("labColum").style.color = "red";
-         //bandera=true;
-      }
+      if(txtColunm==""){}
       else if(!validateRange(txtColunm))
       {
          var newP = document.getElementById("mesColum"); 
@@ -137,181 +140,323 @@
       submitData();
       
    }
+   //This fucntion validate the input of select range
    function validateRange(coordinate) 
    {
       // A little input validation
       if (typeof coordinate != "string" || !coordinate.length) 
          return false;
       var parts = coordinate.split(":");
-      //alert("Tamaña: "+parts.length);
       if(parts.length!=2)
          return false;
       // Find the first occurrence of a digit
-      //alert(parts[0]);
       var startIndex = parts[0].search(/[\d+]/);
       // The column is the part from the beginning up until the first digit
       var column = parts[0].substring(0, startIndex).toUpperCase();
       // The row is the remainder of the string
       var row = parseInt(parts[0].substring(startIndex), 10);
-      //alert(parts[1]);
       var sIndex = parts[1].search(/[\d+]/);
       var column1 = parts[1].substring(0, sIndex).toUpperCase();
       var row1 = parseInt(parts[1].substring(sIndex), 10);
       return (column >= "A" && row >= 1) && (column <= "XFD" && row <= 1048576)&& (column1 >= "A" && row1 >= 1) && (column1 <= "XFD" && row1 <= 1048576);
    }
-   function submit(informe)
+   
+   //This function send the notification of sending emails
+   function notification(informe)
    {
-    //Correos enviados 
-    //Correos no enviados
-    document.getElementById("info").innerHTML="";
-    var div= document.getElementById("info");
-    var str = informe.split("-");
-    //alert(str[0]);
-    
-    if(str[0].localeCompare("e")==0)//Los datos tienen texto en las celdas
-    {
-       var para = document.createElement("p");
-       var node = document.createTextNode("Error Notification");
-       para.style.color="#e60000";
-       para.style.fontSize="20px";
-       para.appendChild(node);
-       div.appendChild(para);
-    
-       var para = document.createElement("p");
-       var node = document.createTextNode("There are some characters in the values selected, please correct the data and try again.");
-       para.style.color="#000000";
-       //para.style.fontSize="20px";
-       para.appendChild(node);
-       div.appendChild(para);
-    }
-    else if(str[0].localeCompare("a")==0)//Los datos tienen texto en las celdas
-    {
-       var para = document.createElement("p");
-       var node = document.createTextNode("Error Notification");
-       para.style.color="#e60000";
-       para.style.fontSize="20px";
-       para.appendChild(node);
-       div.appendChild(para);
-       
-       var para4 = document.createElement("p");
-       var node4 = document.createTextNode("The sheet of emails has mistakes, please check that you select the correct sheet with the headers: name, last name, and email. Also, that the emails are in the right format.");
-       para4.style.color="#000000";
-       para4.appendChild(node4);
-       div.appendChild(para4);
-    }
-    else if(str[0].localeCompare("i")==0)//The file is in the root folder
-    {
-       var para = document.createElement("p");
-       var node = document.createTextNode("Error Notification");
-       para.style.color="#e60000";
-       para.style.fontSize="20px";
-       para.appendChild(node);
-       div.appendChild(para);
-       
-       var para4 = document.createElement("p");
-       var node4 = document.createTextNode("Please create a folder in google drive, put the file inside the folder and try again.");
-       para4.style.color="#000000";
-       para4.appendChild(node4);
-       div.appendChild(para4);
-    }
-    else if(parseInt(str[0])==0)//Correos se enviaron correctamente
-    {  
-       var para = document.createElement("p");
-       var node = document.createTextNode("Successful Notification");
-       para.style.color="#33cc33";
-       para.style.fontSize="20px";
-       para.appendChild(node);
-       div.appendChild(para);
-       
-       var text="All "+ str[1] +" emails were successfully sent."
-       
-       var para1 = document.createElement("p");
-       var node1 = document.createTextNode(text);
-       para1.style.color="#000000";
-       para1.appendChild(node1);
-       div.appendChild(para1);
-       
-       /*var para2 = document.createElement("p");
-       var node2 = document.createTextNode(res2);
-       para2.appendChild(node2);
-       div.appendChild(para2);*/
-       
-    }
-    else //Algun correo no se envio
-    {
-       var res1="Emails Sent: "+ str[1];
-       var res2="Emails not Sent: "+ str[0];
-       
-       var para = document.createElement("p");
-       var node = document.createTextNode("Error Notification");
-       para.style.color="#e60000";
-       para.style.fontSize="20px";
-       para.appendChild(node);
-       div.appendChild(para);
-       
-       /*var para4 = document.createElement("p");
-       var node4 = document.createTextNode("The following people were not sent the file:");
-       para4.style.color="#000000";
-       para4.appendChild(node4);
-       div.appendChild(para4);
-          
-       var ul = document.createElement("ul");   
-       var str3= str[2].split(",");
-       for (j = 0; j < str3.length-1; j++) 
-       {
-           var li = document.createElement("li");
-           var node3 = document.createTextNode(str3[j]);
-           li.appendChild(node3);
-           ul.appendChild(li);
-       }
-       div.appendChild(ul);*/
-       
-       var para1 = document.createElement("label");
-       var node1 = document.createTextNode(res1);
-       para1.appendChild(node1);
-       div.appendChild(para1);
-       
-       var br = document.createElement("br");
-       div.appendChild(br); 
-       
-       var para2 = document.createElement("label");
-       var node2 = document.createTextNode(res2);
-       para2.appendChild(node2);
-       div.appendChild(para2);
-       
-       var br = document.createElement("br");
-       div.appendChild(br); 
-       
-       var para4 = document.createElement("p");
-       var node4 = document.createTextNode("Please check that you select the correct sheet with the headers: name, last name, and email. Also, that the emails are in the right format.");
-       para4.style.color="#000000";
-       para4.appendChild(node4);
-       div.appendChild(para4);
+      var str = informe.split("-");
+      var notiEmail=parseInt(str[0]);
+      var banderaNames=false;
+         
+      if(notiEmail==1)
+      {emailSend++;}
+      else
+      {emailNoSend++;
+      banderaNames=true;}
+   
+      if(flagNoti)
+      {
+        var div= document.getElementById("info");
         
-    }
-    //var myVar =setTimeout(closeApp, 20000);
-    
+        var res1="Emails Sent: "+ emailSend+ " of " + numEma ;
+        var res2="Emails not Sent: "+ emailNoSend;
+      
+        var para1 = document.createElement("label");
+        para1.setAttribute("id", "label1");
+        var node1 = document.createTextNode(res1);
+        para1.appendChild(node1);
+        div.appendChild(para1);
+        var br = document.createElement("br");
+        div.appendChild(br); 
+       
+        var para2 = document.createElement("label");
+        para2.setAttribute("id", "label2");
+        var node2 = document.createTextNode(res2);
+        para2.appendChild(node2);
+        div.appendChild(para2);
+        var br = document.createElement("br");
+        div.appendChild(br); 
+        
+        if(emailNoSend>0)
+        {
+          var para3 = document.createElement("label");
+          var node3 = document.createTextNode("List of people that the emails was not sent:");
+          para3.appendChild(node3);
+          div.appendChild(para3);
+            
+          var para6 = document.createElement("ol");
+          para6.setAttribute("id", "ol1");
+          flagError=false;
+        
+          var para4 = document.createElement("li");
+          var node4 = document.createTextNode(str[1]);
+          para4.appendChild(node4);
+          para6.appendChild(para4);
+          div.appendChild(para6);
+        }
+              
+       
+        flagNoti=false;
+        
+      }
+      else
+      {
+        var label1 =document.getElementById("label1");
+        var label2 =document.getElementById("label2");
+        
+        var res1="Emails Sent: "+ emailSend + " of " + numEma ;
+        var res2="Emails not Sent: "+ emailNoSend;
+        
+        var node1 = document.createTextNode(res1);
+        label1.replaceChild(node1, label1.childNodes[0]);
+        var node2 = document.createTextNode(res2);
+        label2.replaceChild(node2, label2.childNodes[0]);
+ 
+        
+        if(banderaNames)
+        {
+          if(flagError)
+          {
+            var para3 = document.createElement("label");
+            var node3 = document.createTextNode("List of people that the emails was not sent:");
+            para3.appendChild(node3);
+            div.appendChild(para3);
+            
+            var para6 = document.createElement("ol");
+            para6.setAttribute("id", "ol1");
+            flagError=false;
+          } 
+        
+           var ol =document.getElementById("ol1");
+           
+           var para4 = document.createElement("li");
+           var node4 = document.createTextNode(str[1]);
+           para4.appendChild(node4);
+           ol.appendChild(para4);
+        }               
+      }
+      
    }
-   function closeApp()
-   {google.script.host.close();}
+   //This function validate the sending data and received the number of mails
+   function sharedSpreadSheet(numEmails)
+   { 
+     numEma=numEmails;
+     document.getElementById("info").innerHTML="";
+     var div= document.getElementById("info");
+     
+     if(Number.isInteger(numEmails))
+     {
+       if(numEmails==-2)//Los datos tienen texto en las celdas
+       {
+          var para = document.createElement("p");
+          var node = document.createTextNode("Error Notification");
+          para.style.color="#e60000";
+          para.style.fontSize="20px";
+          para.appendChild(node);
+          div.appendChild(para);
+        
+          var para = document.createElement("p");
+          var node = document.createTextNode("There are some characters in the values selected, please correct the data and try again.");
+          para.style.color="#000000";
+          para.appendChild(node);
+          div.appendChild(para);
+        }
+        else if(numEmails==-1)
+        {
+           var para = document.createElement("p");
+           var node = document.createTextNode("Error Notification");
+           para.style.fontSize="20px";
+           para.appendChild(node);
+           div.appendChild(para);
+           
+           var para4 = document.createElement("p");
+           var node4 = document.createTextNode("The sheet of emails has mistakes, please check that you select the correct sheet with the headers: name, last name, and email.");
+           para4.style.color="#000000";
+           para4.style.textAlign="justify"
+           para4.appendChild(node4);
+           div.appendChild(para4);
+        }
+        else if(numEmails==-3)//The file is in the root folder
+        {
+          
+          var para = document.createElement("p");
+          var node = document.createTextNode("Error Notification");
+          para.style.color="#e60000";
+          para.style.fontSize="20px";
+          para.appendChild(node);
+          div.appendChild(para);
+        
+          var para4 = document.createElement("p");
+          var node4 = document.createTextNode("Please create a folder in google drive, put the file inside the folder and try again.");
+          para4.style.color="#000000";
+          para4.appendChild(node4);
+          div.appendChild(para4);
+        }  
+        else if(numEmails>0)
+        {        
+          var para = document.createElement("p");
+          var node = document.createTextNode("The emails are being sent, This process will take some minutes depending on the data volume. Please don't close the page.");
+          para.style.textAlign="justify"
+          para.appendChild(node);
+          div.appendChild(para);
+  
+          var para5 = document.createElement("p");
+          var node5 = document.createTextNode("If there were emails that were not sent, please correct them and then send only those that were not sent correctly.");
+          para5.style.color="#000000";
+          para5.style.textAlign="justify"
+          para5.appendChild(node5);
+          div.appendChild(para5);
+          
+          for(var i=0; i <numEmails; i++)
+          {
+            for(var k=0; k < formGlobal.elements.length; k++) 
+            {
+              var campo = formGlobal.elements[k];
+              if(campo.type == "hidden") {
+                formGlobal.elements[k].value=valueCampo;
+                valueCampo++;
+                break;
+              }
+            }
+            var myRunner = google.script.run.withFailureHandler(onFailure);
+            var myRunner1 = myRunner.withSuccessHandler(notification);
+            myRunner1.addNoiseFinal(formGlobal);
+          }
+        }
+        else
+        {
+           var para = document.createElement("p");
+           var node = document.createTextNode("An unexpected error has occurred please check that you selected the right values and try again. If the error persists please call the administrator.");
+           para.style.textAlign="justify"
+           para.appendChild(node);
+           div.appendChild(para);
+        }
+     }
+     else
+     {
+       var strRes = numEmails.split(",");
+       if(strRes[0]=='a')
+       {
+          var para = document.createElement("p");
+          var node = document.createTextNode("Error Notification");
+          para.style.fontSize="20px";
+          para.appendChild(node);
+          div.appendChild(para);
+          
+          var para4 = document.createElement("p");
+          var node4 = document.createTextNode("The sheet of emails has mistakes, please check emails and try again.");
+          para4.style.color="#000000";
+          para4.style.textAlign="justify"
+          para4.appendChild(node4);
+          div.appendChild(para4);
+          
+          var para3 = document.createElement("label");
+          var node3 = document.createTextNode("List of people who have invalid emails or do not have a gmail account:");
+          para3.appendChild(node3);
+          div.appendChild(para3);
+          
+          var para6 = document.createElement("ol");
+          para6.setAttribute("id", "ol1");
+          for(var j=1; j<strRes.length;j++)
+          {
+          var para4 = document.createElement("li");
+          var node4 = document.createTextNode(strRes[j]);
+          para4.appendChild(node4);
+          para6.appendChild(para4);
+          }
+          div.appendChild(para6);
+       }
+       else if(strRes[0]=='b'){
+          var para = document.createElement("p");
+          var node = document.createTextNode("Error Notification");
+          para.style.fontSize="20px";
+          para.appendChild(node);
+          div.appendChild(para);
+           
+          var para4 = document.createElement("p");
+          var node4 = document.createTextNode("The sheet of emails has mistakes, please check that you select the correct sheet with the headers: name, last name, and email. Also, that the emails are in the right format.");
+          para4.style.color="#000000";
+          para4.style.textAlign="justify"
+          para4.appendChild(node4);
+          div.appendChild(para4);
+          
+          var para = document.createElement("p");
+          var node = document.createTextNode("The mistake is in the row "+ strRes[1]+ " of the sheet of emails.");
+          para.style.color="#000000";
+          para.appendChild(node);
+          div.appendChild(para);
+       
+       }
+       else{
+           var para = document.createElement("p");
+           var node = document.createTextNode("An unexpected error has occurred please check that you selected the right values and try again. If the error persists please call the administrator.");
+           para.style.textAlign="justify"
+           para.appendChild(node);
+           div.appendChild(para);
+       }
+     }
+   }
+
    
    function submitData()
    {
        if(banderaEnvio)
        {
-          var form= document.getElementById("form1");
-          google.script.run.withSuccessHandler(submit).addNoise(form);
+          formGlobal= document.getElementById("form1");
+          
+          var myRunner = google.script.run.withFailureHandler(onFailure);
+          var myRunner1 = myRunner.withSuccessHandler(sharedSpreadSheet);
+          myRunner1.getNumberEmails(formGlobal);
+          
           document.getElementById("info").innerHTML="";
           document.getElementById("help").innerHTML="";
           document.getElementById("help").style.border="none";
-          var div= document.getElementById("info");
-          var para = document.createElement("p");
-          var node = document.createTextNode("The emails are being sent. This process will take some minutes depending on the data volume. Please don't close the page.");
-          para.style.fontSize="16px";
-          para.appendChild(node);
-          div.appendChild(para);    
+          var div= document.getElementById("info"); 
+          var para4 = document.createElement("p");
+          var node4 = document.createTextNode("Validating information, this process will take some minutes depending on the data volume. Please don't close the page.");
+          para4.appendChild(node4);
+          div.appendChild(para4);
        }  
    }
+   
+   function onFailure()
+   {
+      document.getElementById("info").innerHTML="";
+      var div= document.getElementById("info"); 
+      var para = document.createElement("p");
+      var node = document.createTextNode("Error Notification");
+      para.style.fontSize="20px";
+      para.appendChild(node);
+      div.appendChild(para);
+      
+      var para4 = document.createElement("p");
+      var node4 = document.createTextNode("An unexpected error has occurred please check that you selected the right values and try again. If the error persists please call the administrator.");
+      para4.style.color="#000000";
+      para4.style.textAlign="justify"
+      para4.appendChild(node4);
+      div.appendChild(para4); 
+   }
+   
    function getCeldas()
    {
      google.script.run.withSuccessHandler(setData).celdas();
@@ -349,17 +494,17 @@
           <td style="padding:0px; width: 80%;"><input class="waffle-range-selection-input waffle-named-ranges-range-select" spellcheck="false" placeholder="" name="row" id="row"></td>
            <td style="padding:0px 0px 0px 4px; width: 20%;" class="waffle-range-selection-button-container"><div role="button" onclick="getCeldas1();" class="goog-inline-block jfk-button jfk-button-standard jfk-button-narrow waffle-range-selection-button" tabindex="0" data-tooltip="Select data range" aria-label="Select data range" style="user-select: none;">
                <div class="docs-icon goog-inline-block "><div class="docs-icon-img-container docs-icon-img docs-icon-grid" aria-hidden="true">&nbsp;</div></div></div></td></tr></tbody></table>
-     </div><span id="mesRow"></span></div><br />
+     </div><div style="padding-top: 6px;padding-left: 189px;"><span id="mesRow"></span></div></div><br />
      <div class="label2"><div style="float: left; padding-top:5px; margin-right: 9px;"><span id="labData"> * </span><label>Values: </label></div><div style="padding:0px; width: 120px; float: left"><table cellpadding="0" cellspacing="0" class="waffle-range-selection-container"><tbody><tr>
           <td style="padding:0px; width: 80%;"><input class="waffle-range-selection-input waffle-named-ranges-range-select" spellcheck="false" placeholder="" name="name" id="name"></td>
            <td style="padding:0px 0px 0px 4px; width: 20%;" class="waffle-range-selection-button-container"><div role="button" onclick="getCeldas();" class="goog-inline-block jfk-button jfk-button-standard jfk-button-narrow waffle-range-selection-button" tabindex="0" data-tooltip="Select data range" aria-label="Select data range" style="user-select: none;">
                <div class="docs-icon goog-inline-block "><div class="docs-icon-img-container docs-icon-img docs-icon-grid" aria-hidden="true">&nbsp;</div></div></div></td></tr></tbody></table>
-     </div><span id="mesData"></span></div><br />
+     </div><div style="padding-top: 6px;padding-left: 185px;"><span id="mesData"></span></div></div><br />
      <div class="label2"><div style="float: left; padding-top:5px; margin-right: 9px;"><span id="labColum"></span><label>Other Data: </label></div><div style="padding:0px; width: 120px; float: left"><table cellpadding="0" cellspacing="0" class="waffle-range-selection-container"><tbody><tr>
           <td style="padding:0px; width: 80%;"><input class="waffle-range-selection-input waffle-named-ranges-range-select" spellcheck="false" placeholder="" name="colum" id="colum"></td>
            <td style="padding:0px 0px 0px 4px; width: 20%;" class="waffle-range-selection-button-container"><div role="button" onclick="getCeldas2();" class="goog-inline-block jfk-button jfk-button-standard jfk-button-narrow waffle-range-selection-button" tabindex="0" data-tooltip="Select data range" aria-label="Select data range" style="user-select: none;">
                <div class="docs-icon goog-inline-block "><div class="docs-icon-img-container docs-icon-img docs-icon-grid" aria-hidden="true">&nbsp;</div></div></div></td></tr></tbody></table>
-     </div><span id="mesColum"></span></div><br />
+     </div><div style="padding-top: 6px;padding-left: 199px;"><span id="mesColum"></span></div></div><br />
     
      <div class="label"><label>Values distribution:</label>
     <select id="type" name="type">
@@ -373,6 +518,7 @@
     <select id="email" name="email">
     </select><br /></div>
     <div class="label"><label> Message: </label><br /><textarea rows="4" cols="35" name="message" id="message" form="form1"></textarea><br /></div>
+    <input type="hidden" id="numEmails2" name="numEmails2" value="-1">
     <div class="buton" onclick="validateForm();">Share</div>
     </form>
    </div>       
