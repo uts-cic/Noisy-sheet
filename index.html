@@ -35,6 +35,7 @@
     var valueCampo=0;
     var numEma=0;
     var flagError=true;
+    var flagSendEmails=0;
     
     window.onload = function () 
     {//cookie
@@ -67,6 +68,7 @@
    function addList(infoList) 
    {
       var select = document.getElementById("email");
+      var selectQuestion = document.getElementById("question");
       var parts = infoList.split("-");
       for(var i = 0; i <(parts.length-1); i++) 
       {
@@ -74,6 +76,13 @@
          option.text = parts[i];
          option.value = parts[i];
          select.add(option, 0);
+      }
+      for(var i = 0; i <(parts.length-1); i++) 
+      {
+         var option = document.createElement('option');
+         option.text = parts[i];
+         option.value = parts[i];
+         selectQuestion.add(option, 0);
       }
     }
    var banderaEnvio=false;
@@ -138,6 +147,7 @@
       else{banderaEnvio=true;}
       
       submitData();
+      //sharedSpreadSheet(4);//CAM
       
    }
    //This fucntion validate the input of select range
@@ -164,102 +174,28 @@
    //This function send the notification of sending emails
    function notification(informe)
    {
-      var str = informe.split("-");
-      var notiEmail=parseInt(str[0]);
-      var banderaNames=false;
-         
-      if(notiEmail==1)
-      {emailSend++;}
-      else
-      {emailNoSend++;
-      banderaNames=true;}
-   
-      if(flagNoti)
-      {
-        var div= document.getElementById("info");
-        
-        var res1="Emails Sent: "+ emailSend+ " of " + numEma ;
-        var res2="Emails not Sent: "+ emailNoSend;
-      
-        var para1 = document.createElement("label");
-        para1.setAttribute("id", "label1");
-        var node1 = document.createTextNode(res1);
-        para1.appendChild(node1);
-        div.appendChild(para1);
-        var br = document.createElement("br");
-        div.appendChild(br); 
-       
-        var para2 = document.createElement("label");
-        para2.setAttribute("id", "label2");
-        var node2 = document.createTextNode(res2);
-        para2.appendChild(node2);
-        div.appendChild(para2);
-        var br = document.createElement("br");
-        div.appendChild(br); 
-        
-        if(emailNoSend>0)
-        {
-          var para3 = document.createElement("label");
-          var node3 = document.createTextNode("List of people that the emails was not sent:");
-          para3.appendChild(node3);
-          div.appendChild(para3);
-            
-          var para6 = document.createElement("ol");
-          para6.setAttribute("id", "ol1");
-          flagError=false;
-        
-          var para4 = document.createElement("li");
-          var node4 = document.createTextNode(str[1]);
-          para4.appendChild(node4);
-          para6.appendChild(para4);
-          div.appendChild(para6);
-        }
-              
-       
-        flagNoti=false;
-        
+      document.getElementById("info").innerHTML="";
+      var div= document.getElementById("info");
+     
+      if(parseInt(flagSendEmails)==2){
+        var para = document.createElement("p");
+        var node = document.createTextNode("All the spreadsheet was sent successfully.");
+        para.style.textAlign="justify";
+        para.appendChild(node);
+        div.appendChild(para);
       }
-      else
-      {
-        var label1 =document.getElementById("label1");
-        var label2 =document.getElementById("label2");
-        
-        var res1="Emails Sent: "+ emailSend + " of " + numEma ;
-        var res2="Emails not Sent: "+ emailNoSend;
-        
-        var node1 = document.createTextNode(res1);
-        label1.replaceChild(node1, label1.childNodes[0]);
-        var node2 = document.createTextNode(res2);
-        label2.replaceChild(node2, label2.childNodes[0]);
- 
-        
-        if(banderaNames)
-        {
-          if(flagError)
-          {
-            var para3 = document.createElement("label");
-            var node3 = document.createTextNode("List of people that the emails was not sent:");
-            para3.appendChild(node3);
-            div.appendChild(para3);
-            
-            var para6 = document.createElement("ol");
-            para6.setAttribute("id", "ol1");
-            flagError=false;
-          } 
-        
-           var ol =document.getElementById("ol1");
-           
-           var para4 = document.createElement("li");
-           var node4 = document.createTextNode(str[1]);
-           para4.appendChild(node4);
-           ol.appendChild(para4);
-        }               
+      else{
+        var para = document.createElement("p");
+        var node = document.createTextNode("The configuration for adding noise was successful.");
+        para.style.textAlign="justify";
+        para.appendChild(node);
+        div.appendChild(para);
       }
-      
    }
    //This function validate the sending data and received the number of mails
    function sharedSpreadSheet(numEmails)
    { 
+     //VAlidar que la hoja email tenga la columna de "Email adress"
      numEma=numEmails;
      document.getElementById("info").innerHTML="";
      var div= document.getElementById("info");
@@ -296,6 +232,21 @@
            para4.appendChild(node4);
            div.appendChild(para4);
         }
+        else if(numEmails==-9)//emails invalids
+        {
+           var para = document.createElement("p");
+           var node = document.createTextNode("Error Notification");
+           para.style.fontSize="20px";
+           para.appendChild(node);
+           div.appendChild(para);
+           
+           var para4 = document.createElement("p");
+           var node4 = document.createTextNode("The sheet of emails has mistakes, please check that the emails are valid.");
+           para4.style.color="#000000";
+           para4.style.textAlign="justify"
+           para4.appendChild(node4);
+           div.appendChild(para4);
+        }
         else if(numEmails==-3)//The file is in the root folder
         {
           
@@ -311,37 +262,75 @@
           para4.style.color="#000000";
           para4.appendChild(node4);
           div.appendChild(para4);
-        }  
-        else if(numEmails>0)
-        {        
+        }
+        else if(numEmails==-4)//no 'Questions'
+        {
+          
           var para = document.createElement("p");
-          var node = document.createTextNode("The emails are being sent, This process will take some minutes depending on the data volume. Please don't close the page.");
-          para.style.textAlign="justify"
+          var node = document.createTextNode("Error Notification");
+          para.style.color="#e60000";
+          para.style.fontSize="20px";
           para.appendChild(node);
           div.appendChild(para);
-  
-          var para5 = document.createElement("p");
-          var node5 = document.createTextNode("If there were emails that were not sent, please correct them and then send only those that were not sent correctly.");
-          para5.style.color="#000000";
-          para5.style.textAlign="justify"
-          para5.appendChild(node5);
-          div.appendChild(para5);
+        
+          var para4 = document.createElement("p");
+          var node4 = document.createTextNode("There is no 'Questions' sheet, create a sheet with name 'Questions' and add the questions and solutions.");
+          para4.style.color="#000000";
+          para4.appendChild(node4);
+          div.appendChild(para4);
+        }
+        else if(numEmails==-5)//The data of the questions sheet are wrong
+        {
           
-          for(var i=0; i <numEmails; i++)
-          {
-            for(var k=0; k < formGlobal.elements.length; k++) 
-            {
-              var campo = formGlobal.elements[k];
-              if(campo.type == "hidden") {
-                formGlobal.elements[k].value=valueCampo;
-                valueCampo++;
-                break;
-              }
-            }
-            var myRunner = google.script.run.withFailureHandler(onFailure);
-            var myRunner1 = myRunner.withSuccessHandler(notification);
-            myRunner1.addNoiseFinal(formGlobal);
+          var para = document.createElement("p");
+          var node = document.createTextNode("Error Notification");
+          para.style.color="#e60000";
+          para.style.fontSize="20px";
+          para.appendChild(node);
+          div.appendChild(para);
+        
+          var para4 = document.createElement("p");
+          var node4 = document.createTextNode("The sheet of questions has mistakes, please check that you select the correct sheet with the headers: questions and answers. Also, that the column of answers are formulas.");
+          para4.style.color="#000000";
+          para4.appendChild(node4);
+          div.appendChild(para4);
+        }
+        else if(numEmails==-7)//no 'Email address'
+        {
+          
+          var para = document.createElement("p");
+          var node = document.createTextNode("Error Notification");
+          para.style.color="#e60000";
+          para.style.fontSize="20px";
+          para.appendChild(node);
+          div.appendChild(para);
+        
+          var para4 = document.createElement("p");
+          var node4 = document.createTextNode("There is no columm of 'Email address' in the sheet of email, please check that you select the correct sheet with the headers.");
+          para4.style.color="#000000";
+          para4.appendChild(node4);
+          div.appendChild(para4);
+        }
+        else if(numEmails>0)
+        {    
+          if(parseInt(flagSendEmails)==2){
+            var para = document.createElement("p");
+            var node = document.createTextNode("Sending the spreadsheet to the students, please don't close the page.");
+            para.style.textAlign="justify";
+            para.appendChild(node);
+            div.appendChild(para);
           }
+          else{
+            var para = document.createElement("p");
+            var node = document.createTextNode("Saving the information of the form. Please don't close the page.");
+            para.style.textAlign="justify";
+            para.appendChild(node);
+            div.appendChild(para);
+          }  
+  
+          var myRunner = google.script.run.withFailureHandler(onFailure);
+          var myRunner1 = myRunner.withSuccessHandler(notification);
+          myRunner1.saveInformation(formGlobal);
         }
         else
         {
@@ -423,10 +412,13 @@
        if(banderaEnvio)
        {
           formGlobal= document.getElementById("form1");
+          var e = document.getElementById("share");
+          flagSendEmails = e.options[e.selectedIndex].value;
+          
           
           var myRunner = google.script.run.withFailureHandler(onFailure);
           var myRunner1 = myRunner.withSuccessHandler(sharedSpreadSheet);
-          myRunner1.getNumberEmails(formGlobal);
+          myRunner1.validateInformation(formGlobal);
           
           document.getElementById("info").innerHTML="";
           document.getElementById("help").innerHTML="";
@@ -514,8 +506,18 @@
     </select><br /></div>
     <div class="label"><input id="negative" type="checkbox" name="negative"/> Negative values<br /></div>
     <div class="label"><input id="decimal" type="checkbox" name="decimal" checked/> Decimal values<br /></div>
+    
+     <div class="label"><label>Way to Share:</label>
+    <select id="share" name="share">
+       <option value="1">Form</option>
+       <option value="2">List of emails</option>
+    </select><br /></div>
+    
     <div class="label"><label> Emails: </label>
     <select id="email" name="email">
+    </select><br /></div>
+    <div class="label"><label> Questions: </label>
+    <select id="question" name="question">
     </select><br /></div>
     <div class="label"><label> Message: </label><br /><textarea rows="4" cols="35" name="message" id="message" form="form1"></textarea><br /></div>
     <input type="hidden" id="numEmails2" name="numEmails2" value="-1">
@@ -530,6 +532,7 @@
        <div class="label"><strong>Negative values:</strong> Allows to add negative values to new dataset (when adding noise). Default value is false (unchecked).<br /></div>
        <div class="label"><strong>Decimal values:</strong> Allows to add decimal to new dataset (when adding noise). Default value is true (checked).<br /></div>
        <div class="label"><strong>Emails:</strong> is the sheet which contains the emails to share the personalised dataset. This sheet must have the following format: name, last name and email from each student, per row. <br /></div>
+       <div class="label"><strong>Questions:</strong> is the sheet which contains the questions what the students will answer. This sheet must have the following format: questions and answer.  <br /></div>
        <div class="label"><strong>Message: (optional)</strong> you can include a message to be added when sending the email.<br /></div>
    </div>
    </div>
