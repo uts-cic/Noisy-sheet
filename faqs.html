@@ -45,26 +45,25 @@
   </head>
   <body>
     <form id="form1">
-       <p style="text-align : justify;">Noisy sheets is an add-on that works in google spreadsheets, which allows users to: add noise to a dataset; share the unique datasets with a student cohort; and calculate function results for the students' versions of the data.</p> 
-       <p>Noisy sheets add-on has two options in the menu: 1) "Add noise", which, as its name states, adds noise to a dataset. A number of options are provided to fit your new dataset; and 2) "Answers", which creates a new spreadsheet file named "MasterAnswers". This file contains the correct answers for calculations on the datasets provided to students. The answers in this master sheet can then be compared to student quiz responses.</p> 
-       <p>Before using the "Noisy sheets" add-on, please bear in mind the following suggestions:</p>
-       <h3>Add Noise</h3>
-       <ul>
-         <li>The original spreadsheet should be in a different folder rather than the main “My drive” folder.</li>
-         <li>The original spreadsheet should have 3 sheets in total:
-             <ul>
-                <li>The dataset</li>
-                <li>A sheet with the students’ information in the following format: name, last name, and email.</li>
-                <img src="https://drive.google.com/uc?export=download&id=0BzrKtHw2T0wjZGo2RkZKemxrX0k" alt="Email Format" style="margin-left: -70px; padding-top: 9px; padding-bottom: 9px;">                 
-                <li>A sheet with the questions to be asked to students in following format: questions and answers.</li>  
-                <img src="https://drive.google.com/uc?export=download&id=0BzrKtHw2T0wjZkpkYXR6OEFIN2M" alt="Questions Format" width="70%" height="70%" style="padding-top: 9px; padding-bottom: 9px;">   
-             </ul>
-         </li> 
-       </ul>
-       <h3>Answers</h3>
-       <ul>
-         <li>Before generating the answers, you should share the spreadsheets with students using the “Share” button in the “Add Noise” option.</li>
-       </ul>
+       <p style="text-align : justify;">NNoisy sheets is an add-on that works in google spreadsheets, which allows users to: add noise to a dataset; share the unique datasets with a student cohort; and calculate the results of functions for the students' versions of the data.</p> 
+       <p>To use the "Noisy sheets" add-on:</p>
+       <ol>
+         <li>This original spreadsheet should be in a folder within your google drive (i.e., it cannot be in the main "My Drive" folder).  You need three sheets:</li>
+           <ol type="a">
+             <li>Data - a spreadsheet of data, with column headings, and rows of data. If you wish to protect the spreadsheet from editing, you may do so and this protection will be copied.</li>
+             <li>Questions - a sheet with two columns: 'Questions' and 'Answer'.  The 'Questions' (column A) describe the calculation you are performing or question you will ask.  The 'Answers' (column B) perform calculations that refer to the 'Data' sheet; you can use sql formulae or normal formulae here.</li>
+             <li>Email or Form Responses - see instructions below</li>
+           </ol>
+         <li>You should create a 'Questions'. </li>        
+         <li>There are two modes for using Noisy Sheets.</li>
+           <ol type="a">
+             <li><strong>Recommended, via Google Form:</strong> This option distributes copies of the dataset to students who sign up via a Google Form. To use this option, you must setup a Google Form and select your data spreadsheet as the response destination (see <a href="https://support.google.com/docs/answer/2917686?hl=en">instructions here</a>); you must check the box to collect emails. </li>
+             <li><strong>By class list (not recommended):</strong> You can also upload a list with student information, the addon will create a copy of the sheet for each student in the list. The addon is not optimised for this option (an optimised script is available at GITHUB URL). To use this option, create a sheet with the class list: Name, last name, and email address (as below).
+               <img src="https://drive.google.com/uc?export=download&id=198kLzgnjB5_t5KeYDLoCq6dRVs6_7E2X" alt="Email Format" style="margin-left: -5px; padding-top: 9px; padding-bottom: 9px; width:400px;"></li>
+           </ol>
+         <li>You can test the addon by completing the inputs in the 'Noisy Sheets' addon. Using the Google Forms option, an "information" sheet should be created; you can test the addon is working by completing the google form, which should automatically create a copy and set of answers. We recommend testing the class list with a small number to begin with. </li>
+         <li>All copies of the spreadsheet will appear in the same folder as your original data. The Answers for each individual will be collated in a new sheet called MasterAnswers.</li>
+       </ol>
        <div class="label"><p><input id="notification" type="checkbox" name="notification"/>Do not show the message again</p></div>
        <div class="buton" onclick="submitData2();">Ok</div>
     </form>
