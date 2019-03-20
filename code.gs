@@ -1,11 +1,439 @@
+/********NEW*************/
+function triggerEmail(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var range = sheet.getActiveRange();
+  var values =range.getValues();
+  
+  var sheetTrigger = SpreadsheetApp.getActiveSheet();
+  var rangeData= sheetTrigger.getRange(1, 1, 1, sheetTrigger.getLastColumn());
+  var newData= rangeData.getValues();
+  var rowEmail=getRowEmail(newData);
+  
+  var emailData= getEmail(values,rowEmail);
+  range.setNote(emailData);
+  addNoiseFinalTrigger(emailData);
+  //var sheetEmail = activeSpreadsheet.getSheetByName(form.email);
+  //var rangeEmail = sheetEmail.getRange(1, 1, 1, sheetEmail.getLastColumn()-1);
+}
+
+function getEmail(newData,rowEmail){
+  for(var i=0; i<newData.length;i++)//Row 
+  {
+    for (var j=0; j <newData[0].length;j++)//Column 
+    {
+      if(j+1==rowEmail)
+      {
+        return newData[i][j];
+      }
+    }
+  }
+  return -1;
+}
+
+function getRowEmail(newData){
+  var string="Email Address";
+  for(var i=0; i<newData.length;i++)//Row 
+  {
+    for (var j=0; j <newData[0].length;j++)//Column 
+    {
+      if(string.localeCompare(newData[i][j])==0)
+      {
+        return j+1;
+      }
+    }
+  }
+  return -1;
+}
+
+function saveInformation(form)
+{
+  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var name= activeSpreadsheet.getActiveSheet().getName();//PROBAR
+  var newSheet=activeSpreadsheet.getSheetByName("Information");
+  if(newSheet==null){newSheet =activeSpreadsheet.insertSheet("Information");}
+  else{newSheet.clearContents();}
+  var string="undefined";
+  newSheet.getRange(1, 1).setValue(name);
+  newSheet.getRange(1, 2).setValue(form.name);
+  newSheet.getRange(1, 3).setValue(form.row);
+  newSheet.getRange(1, 4).setValue(form.colum);
+  if(string.localeCompare(form.negative)==0){newSheet.getRange(1, 5).setValue(0);}
+  else{newSheet.getRange(1, 5).setValue(1);}
+  if(string.localeCompare(form.decimal)==0){newSheet.getRange(1, 6).setValue(0);}
+  else{newSheet.getRange(1, 6).setValue(1);}
+  newSheet.getRange(1, 7).setValue(form.type);
+  newSheet.getRange(1, 8).setValue(form.message);
+  newSheet.getRange(1, 9).setValue(form.question);
+  newSheet.protect().setWarningOnly(true);
+  
+  //DEBO PREGUNTAR DE ACUERDO AL FORM 
+  //RECORRER TODOS LOS EMAILS
+  var stringShare="2";
+  if(stringShare.localeCompare(form.share)==0)
+  {
+      var emailSheet = activeSpreadsheet.getSheetByName(form.email);
+      var rangeEmail = emailSheet.getRange(1, 1, 1, emailSheet.getLastColumn());
+      var valuesEmail =rangeEmail.getValues();
+      var emailData= getRowEmail(valuesEmail);
+      
+      var rangoEmail= emailSheet.getRange(2, 1, emailSheet.getLastRow()-1, emailSheet.getLastColumn());
+      var valoresEmail= rangoEmail.getValues();
+      for(var i=0; i< valoresEmail.length ;i++) //fila
+      {
+      
+        addNoiseFinalTrigger(valoresEmail[i][emailData-1]);
+      }
+   }
+}
+
+//PONER EL ITEM EN EL INDEX
+//VALIDAR LOS CORREOS
+
+
+//This function send the number of emails and validate de data(data with only numbers) emails (the mails are in the correct format)
+function validateInformation(form)
+{
+  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  
+  var sheetEmail = activeSpreadsheet.getSheetByName(form.email);
+  var rangeEmail = sheetEmail.getRange(1, 1, 1, sheetEmail.getLastColumn());
+  var valuesEmail =rangeEmail.getValues();
+  var emailData= getRowEmail(valuesEmail);
+  if(emailData==-1){return -7;}
+  
+  var rangoEmail= sheetEmail.getRange(2, 1, sheetEmail.getLastRow()-1, sheetEmail.getLastColumn());
+  var valoresEmail= rangoEmail.getValues();
+  var flagEmails= validarEmails(valoresEmail,emailData);//Validate the whole spreedsheet(EMAIL)
+  if(typeof flagEmails === 'string' || flagEmails instanceof String)
+  {
+    if(flagEmails.localeCompare("a")!=0){console.info("IF IF"); return -9;}//Invalidate mails
+  }
+  else{
+    console.info("ELSE"); 
+    var res= "";
+    res="b,"+flagEmails;  
+    return -9;//Mails or sheet incorrect
+  }
+  
+  //DATA
+  var rangoData = activeSpreadsheet.getRange(form.name);//Rango de datos
+  var valoresData= rangoData.getValues();
+  
+  var rangeData= activeSpreadsheet.getRange(form.name);
+  var newData= rangeData.getValues();
+  //Add the noise depending of the value distribution
+  switch (parseInt(form.type)) 
+  {
+    case 1:
+      newData=matrix(valoresData,newData,form.negative,form.decimal);
+      break;
+    case 2:
+      newData=column(valoresData,newData,form.negative,form.decimal);
+      break;
+    case 3:
+      newData=row(valoresData,newData,form.negative,form.decimal);
+  } 
+  //If the original spreadsheet has letters in the data, the will send a messege of the mistake
+  if(newData==-1)
+  {
+    return -2;//e-data with letters
+  } 
+  
+  //FILE-Validate that the spreadsheet is not in the folder root
+  var carpeta="My Drive";
+  var idSource =activeSpreadsheet.getId();
+  var fileSource = DriveApp.getFileById(idSource);
+  var folders =fileSource.getParents();
+  if(folders.hasNext())
+  {  
+    while (folders.hasNext()) 
+    {
+      var folder = folders.next();
+    }
+    if(carpeta.localeCompare(folder.getName())==0)
+    {
+      return -3;//the file in the root
+    }
+  }
+  //Information spreadsheet
+  var sheetInfo= activeSpreadsheet.getSheetByName("Information");
+  if(!sheetInfo==null){
+    activeSpreadsheet.deleteSheet(sheetInfo);
+  }
+  
+  //Questions sheet
+  var questionsSheet = activeSpreadsheet.getSheetByName(form.question);
+  if(questionsSheet==null){return -4;}//No existe
+  //var contador=0;
+  var rangeQues= questionsSheet.getRange(2, 2, questionsSheet.getLastRow()-1,1);
+  var formulas= rangeQues.getFormulas();
+  
+  var flagQuestiones= validationQuestions(formulas);
+  if(flagQuestiones)
+  {
+    return -5;//Bad Questions
+  } 
+  return 1;
+}
+
+function addNoiseFinalTrigger(email)
+{
+  console.info("NOISE"); 
+  //var numEmails2=form.numEmails2;
+  var activesheet = SpreadsheetApp.getActiveSpreadsheet();
+  var aSpreadsheet= activesheet.getSheetByName("Information");
+  //Get Data
+  var nameaSpreadsheet= aSpreadsheet.getRange(1, 1).getValue();
+  var nameValues=aSpreadsheet.getRange(1, 2).getValue();
+  var nameRows=aSpreadsheet.getRange(1, 3).getValue();
+  var nameColumns=aSpreadsheet.getRange(1, 4).getValue();
+  var nameNegative=aSpreadsheet.getRange(1, 5).getValue();
+  var nameDecimal=aSpreadsheet.getRange(1, 6).getValue();
+  var nameType=aSpreadsheet.getRange(1, 7).getValue();
+  var nameMessage=aSpreadsheet.getRange(1, 8).getValue();
+  var nameQuestion=aSpreadsheet.getRange(1, 9).getValue();
+  
+  //get the data from the index
+  var activeSpreadsheet= activesheet.getSheetByName(nameaSpreadsheet);
+  var rangoRow = activeSpreadsheet.getRange(nameRows);//Rango de filas
+  var valoresRow= rangoRow.getValues();
+  var rangoData = activeSpreadsheet.getRange(nameValues);//Rango de datos
+  var valoresData= rangoData.getValues();
+
+  //get the format of the headers
+  var string2="";
+  if(string2.localeCompare(nameColumns)!=0)
+  {  
+    var rangoColumn = activeSpreadsheet.getRange(nameColumns);//Rango de columnas
+    var valoresColumn= rangoColumn.getValues();
+    var sBG = activeSpreadsheet.getRange(nameColumns).getBackgrounds();
+    var sFC = activeSpreadsheet.getRange(nameColumns).getFontColors();
+    var sFF = activeSpreadsheet.getRange(nameColumns).getFontFamilies();
+    var sFL = activeSpreadsheet.getRange(nameColumns).getFontLines();
+    var sFFa = activeSpreadsheet.getRange(nameColumns).getFontFamilies();
+    var sFSz = activeSpreadsheet.getRange(nameColumns).getFontSizes();
+    var sFSt = activeSpreadsheet.getRange(nameColumns).getFontStyles();
+    var sFW = activeSpreadsheet.getRange(nameColumns).getFontWeights();
+    var sHA = activeSpreadsheet.getRange(nameColumns).getHorizontalAlignments();
+    var sVA = activeSpreadsheet.getRange(nameColumns).getVerticalAlignments();
+    var sNF = activeSpreadsheet.getRange(nameColumns).getNumberFormats();
+    var sWR = activeSpreadsheet.getRange(nameColumns).getWraps();
+  }  
+  //get the format of the ROW
+  var sBG1 = activeSpreadsheet.getRange(nameRows).getBackgrounds();
+  var sFC1 = activeSpreadsheet.getRange(nameRows).getFontColors();
+  var sFF1 = activeSpreadsheet.getRange(nameRows).getFontFamilies();
+  var sFL1 = activeSpreadsheet.getRange(nameRows).getFontLines();
+  var sFFa1 = activeSpreadsheet.getRange(nameRows).getFontFamilies();
+  var sFSz1 = activeSpreadsheet.getRange(nameRows).getFontSizes();
+  var sFSt1 = activeSpreadsheet.getRange(nameRows).getFontStyles();
+  var sFW1 = activeSpreadsheet.getRange(nameRows).getFontWeights();
+  var sHA1 = activeSpreadsheet.getRange(nameRows).getHorizontalAlignments();
+  var sVA1 = activeSpreadsheet.getRange(nameRows).getVerticalAlignments();
+  var sNF1 = activeSpreadsheet.getRange(nameRows).getNumberFormats();
+  var sWR1 = activeSpreadsheet.getRange(nameRows).getWraps();
+  
+
+  if(validarEmail(email))
+  {
+    var nameFile = email +" - "+ activeSpreadsheet.getName(); //nombre apellido
+    
+    var carpeta="My Drive";
+    var idSource =activesheet.getId();
+    var fileSource = DriveApp.getFileById(idSource);
+    var folders =fileSource.getParents();
+    
+    while (folders.hasNext()) 
+    {
+      var folder = folders.next();
+    }
+    if(carpeta.localeCompare(folder.getName())==0)
+    {
+      return "3-"+email+ " " +email;//nombre apellido
+    }
+    else
+    {
+      var sheet = SpreadsheetApp.create(nameFile);
+      var spreadSheet= sheet.getSheetByName("Sheet1");
+      spreadSheet.setName(activeSpreadsheet.getName());
+      spreadSheet.protect().setWarningOnly(true);
+      var id = sheet.getId();
+      var file = DriveApp.getFileById(id);
+      var folsStudenst= folder.getFoldersByName("Students");
+      var folderStudenst =null;
+      while (folsStudenst.hasNext()) 
+      {var folderStudenst = folsStudenst.next();}
+      if(folderStudenst==null){folderStudenst=folder.createFolder("Students");}
+      folderStudenst.addFile(file);
+      DriveApp.getRootFolder().removeFile(file);
+    }
+        
+    //Agrego las columnas y filas al nuevo libro creado
+    sheet.getRange(nameRows).setValues(valoresRow);
+    //Put the format of the headers
+    if(string2.localeCompare(nameColumns)!=0)
+    {  
+      sheet.getRange(nameColumns).setValues(valoresColumn);
+      sheet.getRange(nameColumns)
+      .setBackgrounds(sBG)
+      .setFontColors(sFC)
+      .setFontFamilies(sFF)
+      .setFontLines(sFL)
+      .setFontFamilies(sFFa)
+      .setFontSizes(sFSz)
+      .setFontFamilies(sFFa)
+      .setFontSizes(sFSz)
+      .setFontStyles(sFSt)
+      .setFontWeights(sFW)
+      .setHorizontalAlignments(sHA)
+      .setVerticalAlignments(sVA)
+      .setNumberFormats(sNF)
+      .setWraps(sWR);
+    }
+    //Put the format of the headers
+    sheet.getRange(nameRows)
+    .setBackgrounds(sBG1)
+    .setFontColors(sFC1)
+    .setFontFamilies(sFF1)
+    .setFontLines(sFL1)
+    .setFontFamilies(sFFa1)
+    .setFontSizes(sFSz1)
+    .setFontFamilies(sFFa1)
+    .setFontSizes(sFSz1)
+    .setFontStyles(sFSt1)
+    .setFontWeights(sFW1)
+    .setHorizontalAlignments(sHA1)
+    .setVerticalAlignments(sVA1)
+    .setNumberFormats(sNF1)
+    .setWraps(sWR1);
+      
+      
+    var rangeData= sheet.getRange(nameValues);
+    var newData= rangeData.getValues();
+    //Add the noise depending of the value distribution
+    switch (parseInt(nameType)) 
+    {
+      case 1:
+        newData=matrix(valoresData,newData,nameNegative,nameDecimal);
+        break;
+      case 2:
+        newData=column(valoresData,newData,nameNegative,nameDecimal);
+        break;
+      case 3:
+        newData=row(valoresData,newData,nameNegative,nameDecimal);
+    } 
+    //If the original spreadsheet has letters in the data, the will send a messege of the mistake
+    if(newData==-1)
+    {
+      folder.removeFile(file);
+      return "2-"+email + " " +email;//nombre apellido
+    }  
+      
+      rangeData.setValues(newData); 
+      putAnswersTrigger(sheet, activesheet.getSheetByName(nameQuestion),activesheet,email);
+     
+      //share and send email
+      var url = sheet.getUrl();
+      var email = email;
+      var subject = sheet.getName();
+      var body ="Dear student \n" + nameMessage + "\n" +url;//nombre apellido
+      //IVAN
+      try 
+      {
+        sheet.addEditor(email);
+        MailApp.sendEmail(email, subject, body);
+        return "1-"+email + " " +email;//nombre apellido
+      } 
+      catch(e) 
+      {
+        folder.removeFile(file);
+        return "0-"+email+ " " +email;//nombre apellido
+      }
+  }
+  else
+  {
+    return "0-"+email + " " +email;//nombre apellido
+  }  
+  return "0-"+email+ " " +email;  //nombre apellido
+}
+
 /******MENU*******/
 function onOpen(e) {
   SpreadsheetApp.getUi().createAddonMenu()
   .addItem('Add Noise', 'showSidebar')
-  .addItem('Answers','showAnswer')
   .addToUi();  
 }
+function putAnswersTrigger(spreadStudent,questionsSheet,activeSpreadsheet,email)
+{
+    //Get formulas     
+    var rangeQues= questionsSheet.getRange(2, 2, questionsSheet.getLastRow()-1,1);
+    var formulas= rangeQues.getFormulas();
+    //abrir la hoja
+    var sheetStudent = spreadStudent.insertSheet("Questions");
+    //Poner las respuestas
+    var rangeQues1= sheetStudent.getRange(2,2,formulas.length,1);//change
+    var nData1 =rangeQues1.getValues();
+    nData1=answersData(formulas,nData1,2,"nombre");
+    rangeQues1.setValues(nData1);
+    //Crear la master spreadsheet
+    var bandera=true;
+    var idAux = activeSpreadsheet.getId();
+    var fileSourceAux = DriveApp.getFileById(idAux);
+    var foldersAux =fileSourceAux.getParents();
+    var sheet=null;
+    while(foldersAux.hasNext())
+    {
+      var folderAux = foldersAux.next();
+      var sheet4Ite=folderAux.getFilesByName("MasterAnswers");
+      
+      while(sheet4Ite.hasNext())//Ask if master file exists
+      {  
+        var page= sheet4Ite.next()
+        var idMA= page.getId();
+        sheet= SpreadsheetApp.openById(idMA)
+        bandera=false;
+      }
+    }
+  
+    if(bandera)
+    {  
+      //Copy to the folder
+      sheet = SpreadsheetApp.create("MasterAnswers");
+      var id = sheet.getId();
+      var idSource =activeSpreadsheet.getId();
+      var file = DriveApp.getFileById(id);
+      var fileSource = DriveApp.getFileById(idSource);
+      var folders =fileSource.getParents();
+      while (folders.hasNext()) 
+      {
+        var folder = folders.next();
+      }
+      folder.addFile(file);
+      DriveApp.getRootFolder().removeFile(file);
+    } 
+    
+    //Put the questions in the Mastersheet 
+    var rangeQuestions= questionsSheet.getRange(2, 1, questionsSheet.getLastRow()-1,1);
+    var valuesQuestions= rangeQuestions.getValues();
+    var spreadSheet= sheet.getSheetByName("Sheet1");
+    
+    var rangeAnswer= spreadSheet.getRange(1, 1, 1, questionsSheet.getLastRow()+1);
+    var newData= rangeAnswer.getValues();
+    newData=questionsData(valuesQuestions,newData);
+    rangeAnswer.setValues(newData); 
+    
+    var rangeQues1= sheetStudent.getRange(2,2,sheetStudent.getLastRow(),1);//change
+    var formulas1= rangeQues1.getValues();
+    
+    var ranAnswer1= spreadSheet.getRange(spreadSheet.getLastRow()+1, 1, 1, questionsSheet.getLastRow()+1);//IVAN
+    var nData2 =ranAnswer1.getValues();
+    nData2=answersData(formulas1,nData2,1,"nombre",email);//IVAN
+    ranAnswer1.setValues(nData2);
 
+    //Borrar las respuesta de la hoja del estudiante
+    spreadStudent.deleteSheet(sheetStudent);
+}
+/********NEW*************/
 function onInstall(e) {onOpen(e);}
 
 function showAnswer() {
@@ -63,18 +491,19 @@ function comboBox()
 
 /*****VALIDATION******/
 //This function validate the format of the emails
-function validarEmails(valoresEmail)
+function validarEmails(valoresEmail,columna)
 {
   var numEmails= valoresEmail.length;//Numero de correos
   var names="a";
   for(var s= 0; s<numEmails;s++ )//NUMERO DE CORREOS
   { 
-    if(validarEmail(valoresEmail[s][2]))
+    console.info("Email:"+valoresEmail[s][columna-1]); 
+    if(validarEmail(valoresEmail[s][columna-1]))
     {
       var testSheet = SpreadsheetApp.openById("1cbwGKwZooexFKVM31qK4QXkByY2BbQ9gqsxcXG7v5Fs");
       try{
-        testSheet.addViewer(valoresEmail[s][2]);
-        testSheet.removeViewer(valoresEmail[s][2]);
+        testSheet.addViewer(valoresEmail[s][columna-1]);
+        testSheet.removeViewer(valoresEmail[s][columna-1]);
       } 
       catch(e) 
       {
@@ -126,7 +555,7 @@ function questionsData(valuesQuestions,newData)
     
     for(var j=0; j < valuesQuestions[0].length;j++)//columna
     {      
-      newData[j][i+2]=  valuesQuestions[i][j];//IVAN
+      newData[j][i+1]=  valuesQuestions[i][j];//IVAN
     }
   }  
   return newData;
@@ -141,7 +570,7 @@ function answersData(formulas,nData,num,name,email)//IVAN
     { 
       for (var j=0; j <(nData[0].length-2);j++) //IVAN
       {
-        nData[i][j+2]=formulas[j][i];//IVAN
+        nData[i][j+1]=formulas[j][i];//IVAN CHANGE
       }
     }
   }
@@ -156,385 +585,6 @@ function answersData(formulas,nData,num,name,email)//IVAN
     }
   }
   return nData;
-}
-//This function put the information(email,name,questions,answers) in the sheet of the students
-function putAnswers(sheetname)
-{
-  
-  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var questionsSheet = activeSpreadsheet.getSheetByName(sheetname);
-  if(questionsSheet==null){return -1;}
-  var contador=0;
-  var rangeQues= questionsSheet.getRange(2, 2, questionsSheet.getLastRow()-1,1);
-  var formulas= rangeQues.getFormulas();
-  
-  var flagQuestiones= validationQuestions(formulas);
-  if(flagQuestiones)
-  {
-    return -2;
-  } 
-  //Get answer of students
-  var id = activeSpreadsheet.getId();
-  var fileSource = DriveApp.getFileById(id);
-  var folders =fileSource.getParents();
-    
-  while (folders.hasNext()) 
-  {
-    var folder = folders.next();
-    console.info(folder.getName());
-  }
-  var files =folder.getFiles();
-  var cont= 1;
-
-  while(files.hasNext())
-  {
-    var auxFile= files.next();
-    var str= auxFile.getName();
-    var strRes = str.split("-");
-    
-    if(strRes.length>=2)
-    {
-      var spreadStudent= SpreadsheetApp.openById(auxFile.getId());
-      var sheetStudent = spreadStudent.getSheetByName("Questions");
-      if(sheetStudent==null){sheetStudent = spreadStudent.insertSheet("Questions");}
-      
-      var rangeQues1= sheetStudent.getRange(2,2,formulas.length,1);
-      var nData1 =rangeQues1.getValues();
-      var nombre=strRes[0];
-      nData1=answersData(formulas,nData1,2,nombre);
-      rangeQues1.setValues(nData1);
-      contador++;
-    }     
-  }
-  return contador;  
-}
-//This function get the answers of the sheet of the students, delete the sheet and create de MasterAnswers sheet
-function getAnswers(sheetname)
-{
-  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var bandera=true;
-  //Ask if master file exists
-  var idAux = activeSpreadsheet.getId();
-  var fileSourceAux = DriveApp.getFileById(idAux);
-  var foldersAux =fileSourceAux.getParents();
-  while(foldersAux.hasNext())
-  {
-    var folderAux = foldersAux.next();
-    var sheet4=folderAux.getFilesByName("MasterAnswers");
-    
-    while(sheet4.hasNext())
-    {  
-      var page= sheet4.next()
-      var file4 = DriveApp.getFileById(page.getId());
-      folderAux.removeFile(file4);
-    }
-  }
-
-  if(bandera)
-  {  
-    //Copy to the folder
-    var sheet = SpreadsheetApp.create("MasterAnswers");
-    var id = sheet.getId();
-    var idSource =activeSpreadsheet.getId();
-    var file = DriveApp.getFileById(id);
-    var fileSource = DriveApp.getFileById(idSource);
-    var folders =fileSource.getParents();
-    while (folders.hasNext()) 
-    {
-      var folder = folders.next();
-    }
-    folder.addFile(file);
-    DriveApp.getRootFolder().removeFile(file);
-  }  
-  
-  var questionsSheet = activeSpreadsheet.getSheetByName(sheetname);
-  //Put the questions in the new sheet
-  var rangeQuestions= questionsSheet.getRange(2, 1, questionsSheet.getLastRow()-1,1);
-  var valuesQuestions= rangeQuestions.getValues();
-  var spreadSheet= sheet.getSheetByName("Sheet1");
-  var rangeAnswer= spreadSheet.getRange(1, 1, 1, questionsSheet.getLastRow()+1);
-  var newData= rangeAnswer.getValues();
-  newData=questionsData(valuesQuestions,newData);
-  rangeAnswer.setValues(newData);  
-  
-  //Get answer of students
-  var id = activeSpreadsheet.getId();
-  var fileSource = DriveApp.getFileById(id);
-  var folders =fileSource.getParents();
-  while (folders.hasNext()) 
-  {
-    var folder = folders.next();
-  }
-  var files =folder.getFiles();
-  var cont= 0;
-  while(files.hasNext())
-  {
-    var auxFile= files.next();
-    
-    var str= auxFile.getName();
-    var strRes = str.split("-");
-    
-    if(strRes.length>=2)//Validate if the file belongs to the add on "-"
-    {
-      //IVAN
-      var editors =auxFile.getEditors();
-      if(editors.length>0){var email= editors[0].getEmail();}
-      else{var email= "NO EMAIL"}
-      //IVAN
-      
-      var spreadStudent= SpreadsheetApp.openById(auxFile.getId());
-      var sheetStudent = spreadStudent.getSheetByName("Questions");
-      
-      var rangeQues1= sheetStudent.getRange(2,2,sheetStudent.getLastRow(),1);
-      var formulas1= rangeQues1.getValues();
-      
-      var ranAnswer1= spreadSheet.getRange(2+cont, 1, 1, questionsSheet.getLastRow()+1);//IVAN
-      var nData1 =ranAnswer1.getValues();
-      var nombre=strRes[0];
-      nData1=answersData(formulas1,nData1,1,nombre,email);//IVAN
-      ranAnswer1.setValues(nData1);
-      cont++;
-      
-      spreadStudent.deleteSheet(sheetStudent);
-    } 
-  }  
-}
-
-//This function send the number of emails and validate de data(data with only numbers) emails (the mails are in the correct format)
-function getNumberEmails(form)
-{
-  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  
-  ///EMAIL
-  var emailSheet = activeSpreadsheet.getSheetByName(form.email);
-  var rangoEmail= emailSheet.getRange(2, 1, emailSheet.getLastRow()-1, emailSheet.getLastColumn());
-  var valoresEmail= rangoEmail.getValues();
-  var numEmails=-4;
-  var numEmails= valoresEmail.length;//number of emails
-  
-  Logger.log("Columnas"+valoresEmail[0].length);
-  
-  if(valoresEmail[0].length==3)
-  {
-    var flagEmails= validarEmails(valoresEmail);//Validate the whole spreedsheet(EMAIL)
-    if(typeof flagEmails === 'string' || flagEmails instanceof String)
-    {
-      if(flagEmails.localeCompare("a")!=0){return flagEmails;}//Invalidate mails
-    }
-    else{
-      var res= "";
-      res="b,"+flagEmails;  
-      return res;//Mails or sheet incorrect
-    }
-  }
-  else{return -1;}  
-
-  //DATA
-  var rangoData = activeSpreadsheet.getRange(form.name);//Rango de datos
-  var valoresData= rangoData.getValues();
-  
-  var rangeData= activeSpreadsheet.getRange(form.name);
-  var newData= rangeData.getValues();
-  //Add the noise depending of the value distribution
-  switch (parseInt(form.type)) 
-  {
-    case 1:
-      newData=matrix(valoresData,newData,form.negative,form.decimal);
-      break;
-    case 2:
-      newData=column(valoresData,newData,form.negative,form.decimal);
-      break;
-    case 3:
-      newData=row(valoresData,newData,form.negative,form.decimal);
-  } 
-  //If the original spreadsheet has letters in the data, the will send a messege of the mistake
-  if(newData==-1)
-  {
-    return -2;//e-data with letters
-  } 
-  
-  //FILE-Validate that the spreadsheet is not in the folder root
-  var carpeta="My Drive";
-  var idSource =activeSpreadsheet.getId();
-  var fileSource = DriveApp.getFileById(idSource);
-  var folders =fileSource.getParents();
-  if(folders.hasNext())
-  {  
-    while (folders.hasNext()) 
-    {
-      var folder = folders.next();
-    }
-    if(carpeta.localeCompare(folder.getName())==0)
-    {
-      return -3;//the file in the root
-    }
-  }
-  return numEmails;
-}
-//This function add the noise and share the spreadsheet
-function addNoiseFinal(form)
-{
-  var numEmails2=form.numEmails2;
-  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
- 
-  ///EMAIL
-  var emailSheet = activeSpreadsheet.getSheetByName(form.email);
-  var rangoEmail= emailSheet.getRange(2, 1, emailSheet.getLastRow()-1, emailSheet.getLastColumn());
-  var valoresEmail= rangoEmail.getValues();
-  
-  //get the data from the index
-  var rangoRow = activeSpreadsheet.getRange(form.row);//Rango de filas
-  var valoresRow= rangoRow.getValues();
-  var rangoData = activeSpreadsheet.getRange(form.name);//Rango de datos
-  var valoresData= rangoData.getValues();
-
-  //get the format of the headers
-  var string2="";
-  if(string2.localeCompare(form.colum)!=0)
-  {  
-    var rangoColumn = activeSpreadsheet.getRange(form.colum);//Rango de columnas
-    var valoresColumn= rangoColumn.getValues();
-    var sBG = activeSpreadsheet.getRange(form.colum).getBackgrounds();
-    var sFC = activeSpreadsheet.getRange(form.colum).getFontColors();
-    var sFF = activeSpreadsheet.getRange(form.colum).getFontFamilies();
-    var sFL = activeSpreadsheet.getRange(form.colum).getFontLines();
-    var sFFa = activeSpreadsheet.getRange(form.colum).getFontFamilies();
-    var sFSz = activeSpreadsheet.getRange(form.colum).getFontSizes();
-    var sFSt = activeSpreadsheet.getRange(form.colum).getFontStyles();
-    var sFW = activeSpreadsheet.getRange(form.colum).getFontWeights();
-    var sHA = activeSpreadsheet.getRange(form.colum).getHorizontalAlignments();
-    var sVA = activeSpreadsheet.getRange(form.colum).getVerticalAlignments();
-    var sNF = activeSpreadsheet.getRange(form.colum).getNumberFormats();
-    var sWR = activeSpreadsheet.getRange(form.colum).getWraps();
-  }  
-  //get the format of the ROW
-  var sBG1 = activeSpreadsheet.getRange(form.row).getBackgrounds();
-  var sFC1 = activeSpreadsheet.getRange(form.row).getFontColors();
-  var sFF1 = activeSpreadsheet.getRange(form.row).getFontFamilies();
-  var sFL1 = activeSpreadsheet.getRange(form.row).getFontLines();
-  var sFFa1 = activeSpreadsheet.getRange(form.row).getFontFamilies();
-  var sFSz1 = activeSpreadsheet.getRange(form.row).getFontSizes();
-  var sFSt1 = activeSpreadsheet.getRange(form.row).getFontStyles();
-  var sFW1 = activeSpreadsheet.getRange(form.row).getFontWeights();
-  var sHA1 = activeSpreadsheet.getRange(form.row).getHorizontalAlignments();
-  var sVA1 = activeSpreadsheet.getRange(form.row).getVerticalAlignments();
-  var sNF1 = activeSpreadsheet.getRange(form.row).getNumberFormats();
-  var sWR1 = activeSpreadsheet.getRange(form.row).getWraps();
-  
-
-  if(validarEmail(valoresEmail[numEmails2][2]))
-  {
-    var nameFile = valoresEmail[numEmails2][0] + " " +valoresEmail[numEmails2][1] +" - "+ activeSpreadsheet.getName(); 
-    
-    var carpeta="My Drive";
-    var idSource =activeSpreadsheet.getId();
-    var fileSource = DriveApp.getFileById(idSource);
-    var folders =fileSource.getParents();
-    
-    while (folders.hasNext()) 
-    {
-      var folder = folders.next();
-    }
-    if(carpeta.localeCompare(folder.getName())==0)
-    {
-      return "3-"+valoresEmail[numEmails2][0] + " " +valoresEmail[numEmails2][1];
-    }
-    else
-    {
-      var sheet = SpreadsheetApp.create(nameFile);
-      var spreadSheet= sheet.getSheetByName("Sheet1");
-      spreadSheet.setName(activeSpreadsheet.getActiveSheet().getName()); 
-      var id = sheet.getId();
-      var file = DriveApp.getFileById(id);
-      folder.addFile(file);
-      DriveApp.getRootFolder().removeFile(file);
-    }
-        
-    //Agrego las columnas y filas al nuevo libro creado
-    sheet.getRange(form.row).setValues(valoresRow);
-    //Put the format of the headers
-    if(string2.localeCompare(form.colum)!=0)
-    {  
-      sheet.getRange(form.colum).setValues(valoresColumn);
-      sheet.getRange(form.colum)
-      .setBackgrounds(sBG)
-      .setFontColors(sFC)
-      .setFontFamilies(sFF)
-      .setFontLines(sFL)
-      .setFontFamilies(sFFa)
-      .setFontSizes(sFSz)
-      .setFontFamilies(sFFa)
-      .setFontSizes(sFSz)
-      .setFontStyles(sFSt)
-      .setFontWeights(sFW)
-      .setHorizontalAlignments(sHA)
-      .setVerticalAlignments(sVA)
-      .setNumberFormats(sNF)
-      .setWraps(sWR);
-    }
-    //Put the format of the headers
-    sheet.getRange(form.row)
-    .setBackgrounds(sBG1)
-    .setFontColors(sFC1)
-    .setFontFamilies(sFF1)
-    .setFontLines(sFL1)
-    .setFontFamilies(sFFa1)
-    .setFontSizes(sFSz1)
-    .setFontFamilies(sFFa1)
-    .setFontSizes(sFSz1)
-    .setFontStyles(sFSt1)
-    .setFontWeights(sFW1)
-    .setHorizontalAlignments(sHA1)
-    .setVerticalAlignments(sVA1)
-    .setNumberFormats(sNF1)
-    .setWraps(sWR1);
-      
-      
-    var rangeData= sheet.getRange(form.name);
-    var newData= rangeData.getValues();
-    //Add the noise depending of the value distribution
-    switch (parseInt(form.type)) 
-    {
-      case 1:
-        newData=matrix(valoresData,newData,form.negative,form.decimal);
-        break;
-      case 2:
-        newData=column(valoresData,newData,form.negative,form.decimal);
-        break;
-      case 3:
-        newData=row(valoresData,newData,form.negative,form.decimal);
-    } 
-    //If the original spreadsheet has letters in the data, the will send a messege of the mistake
-    if(newData==-1)
-    {
-      folder.removeFile(file);
-      return "2-"+valoresEmail[numEmails2][0] + " " +valoresEmail[numEmails2][1];
-    }  
-      
-      rangeData.setValues(newData);  
-      //share and send email
-      var url = sheet.getUrl();
-      var email = valoresEmail[numEmails2][2];
-      var subject = sheet.getName();
-      var body ="Hi " + valoresEmail[numEmails2][0] + "\n" + form.message + "\n" +url;
-      //IVAN
-      try 
-      {
-        sheet.addEditor(valoresEmail[numEmails2][2]);
-        MailApp.sendEmail(email, subject, body);
-        return "1-"+valoresEmail[numEmails2][0] + " " +valoresEmail[numEmails2][1];
-      } 
-      catch(e) 
-      {
-        folder.removeFile(file);
-        return "0-"+valoresEmail[numEmails2][0] + " " +valoresEmail[numEmails2][1];
-      }
-  }
-  else
-  {
-    return "0-"+valoresEmail[numEmails2][0] + " " +valoresEmail[numEmails2][1];
-  }  
-  return "0-"+valoresEmail[numEmails2][0] + " " +valoresEmail[numEmails2][1];  
 }
 
 /*Function of Values distribution*/
